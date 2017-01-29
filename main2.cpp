@@ -48,7 +48,9 @@ double w(double dHertz)
 #define OSC_SINE 0
 #define OSC_SQUARE 1
 #define OSC_TRIANGLE 2
-#define OSC_NOISE 3
+#define OSC_SAW_ANA 3
+#define OSC_SAW_DIG 4
+#define OSC_NOISE 5
 
 double osc(double dHertz, double dTime, int nType = OSC_SINE)
 {
@@ -62,6 +64,20 @@ double osc(double dHertz, double dTime, int nType = OSC_SINE)
 
 	case OSC_TRIANGLE: // Triangle wave between -1 and +1
 		return asin(sin(w(dHertz) * dTime)) * (2.0 / PI);
+
+	case OSC_SAW_ANA: // Saw wave (analogue / warm / slow)
+	{
+		double dOutput = 0.0;
+
+		for (double n = 1.0; n < 40.0; n++)
+			dOutput += (sin(n * w(dHertz) * dTime)) / n;
+
+		return dOutput * (2.0 / PI);
+	}
+
+	case OSC_SAW_DIG: // Saw Wave (optimised / harsh / fast)
+		return (2.0 / PI) * (dHertz * PI * fmod(dTime, 1.0 / dHertz) - (PI / 2.0));
+
 
 	case OSC_NOISE: // Pseudorandom noise
 		return 2.0 * ((double)rand() / (double)RAND_MAX) - 1.0;
@@ -85,11 +101,11 @@ struct sEnvelopeADSR
 
 	sEnvelopeADSR()
 	{
-		dAttackTime = 0.01;
+		dAttackTime = 0.10;
 		dDecayTime = 0.01;
 		dStartAmplitude = 1.0;
 		dSustainAmplitude = 0.8;
-		dReleaseTime = 0.02;
+		dReleaseTime = 0.20;
 		bNoteOn = false;
 		dTriggerOffTime = 0.0;
 		dTriggerOnTime = 0.0;
@@ -165,8 +181,8 @@ double MakeNoise(double dTime)
 	// Mix together a little sine and square waves
 	double dOutput = envelope.GetAmplitude(dTime) *
 		(
-			+ 1.0 * osc(dFrequencyOutput, dTime, OSC_SINE)
-			+ 0.2 * osc(dFrequencyOutput * 2, dTime, OSC_SQUARE) // Note the double frequency
+			+ 1.0 * osc(dFrequencyOutput * 0.5, dTime, OSC_SINE)
+			+ 1.0 * osc(dFrequencyOutput, dTime, OSC_SAW_ANA)
 		);
 		
 	return dOutput * 0.4; // Master Volume
