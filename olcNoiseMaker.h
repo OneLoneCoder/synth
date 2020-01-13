@@ -57,9 +57,12 @@
 	             GCC it caused some conflict naming errors with other libraries.
 		     So std:: was manually added where it needs to be.
              FIX   - Commented out the "nPreviousSample" Variable since it wasn't being used.
+	     ADDED - Added the UNICODE define since this uses wide characters.
 */
 
 #pragma once
+
+#define UNICODE
 
 #ifdef _MSC_VER
 #pragma comment(lib, "winmm.lib")
