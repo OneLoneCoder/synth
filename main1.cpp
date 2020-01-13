@@ -41,7 +41,7 @@
 
 	See video: https://youtu.be/tgamhuQnOkM
 
-	UPDATED by IndustriousNomad :
+	UPDATED by IndustriousNomad - 13/1/2020 :
 	     FIX   - using atomic for "double dFrequencyOutput = 0.0;" is not needed
 	             GCC wouldn't compile with it in this manner anyhow. Visual Studio
 	             should have caught this, but didn't. :/
