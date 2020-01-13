@@ -7,7 +7,7 @@ License
 Copyright (C) 2018  Javidx9
 This program comes with ABSOLUTELY NO WARRANTY.
 This is free software, and you are welcome to redistribute it
-under certain conditions; See license for details. 
+under certain conditions; See license for details.
 Original works located at:
 https://www.github.com/onelonecoder
 https://www.onelonecoder.com
@@ -18,10 +18,10 @@ https://github.com/OneLoneCoder/videos/blob/master/LICENSE
 
 From Javidx9 :)
 ~~~~~~~~~~~~~~~
-Hello! Ultimately I don't care what you use this for. It's intended to be 
-educational, and perhaps to the oddly minded - a little bit of fun. 
-Please hack this, change it and use it in any way you see fit. You acknowledge 
-that I am not responsible for anything bad that happens as a result of 
+Hello! Ultimately I don't care what you use this for. It's intended to be
+educational, and perhaps to the oddly minded - a little bit of fun.
+Please hack this, change it and use it in any way you see fit. You acknowledge
+that I am not responsible for anything bad that happens as a result of
 your actions. However this code is protected by GNU GPLv3, see the license in the
 github repo. This means you must attribute me if you use it. You can view this
 license here: https://github.com/OneLoneCoder/videos/blob/master/LICENSE
@@ -55,16 +55,28 @@ This is the first version of the software. It presents a simple
 keyboard and a sine wave oscillator.
 See video: https://youtu.be/tgamhuQnOkM
 
+	UPDATED by IndustriousNomad - 13/1/2020 :
+	 RESET - Previously, "using namespace std;" was used. But when using
+	         GCC it caused some conflict naming errors. So std:: was manually
+                 added where it needs to be.
+         RESET - To future proof this, the endl functions were replaced with \n.
+                 Reasoning behind this is for speed and less code.
+
+         SIDE NOTE 1 - FOR CODEBLOCKS USERS -- Make sure you add UNICODE in the DEFINES.
+                       I just add #define UNICODE to the olcNoiseMaker.h header.
+
+         SIDE NOTE 2 - If your console screen is wider then the way that javidx9
+                       has his, then you will see the text reacting sporadically.
+                       Resize your console window and all the text will align.
+                       His older way worked fine, not sure why he changed it. :/
 */
 
 #include <list>
 #include <iostream>
 #include <algorithm>
-using namespace std;
 
 #define FTYPE double
-#include "olcNoiseMaker.h"
-
+#include "olcNoiseMaker_VIDEO_PARTS_3_4.h"
 
 namespace synth
 {
@@ -156,7 +168,7 @@ namespace synth
 		{
 		case SCALE_DEFAULT: default:
 			return 8 * pow(1.0594630943592952645618252949463, nNoteID);
-		}		
+		}
 	}
 
 
@@ -238,7 +250,7 @@ namespace synth
 		FTYPE dVolume;
 		synth::envelope_adsr env;
 		FTYPE fMaxLifeTime;
-		wstring name;
+		std::wstring name;
 		virtual FTYPE sound(const FTYPE dTime, synth::note n, bool &bNoteFinished) = 0;
 	};
 
@@ -349,7 +361,7 @@ namespace synth
 			FTYPE dSound =
 				+ 0.99 * synth::osc(dTime - n.on, synth::scale(n.id - 36), synth::OSC_SINE, 1.0, 1.0)
 				+ 0.01 * synth::osc(dTime - n.on, 0, synth::OSC_NOISE);
-				
+
 			return dAmplitude * dSound * dVolume;
 		}
 
@@ -417,7 +429,7 @@ namespace synth
 		struct channel
 		{
 			instrument_base* instrument;
-			wstring sBeat;
+			std::wstring sBeat;
 		};
 
 	public:
@@ -461,7 +473,7 @@ namespace synth
 				}
 			}
 
-			
+
 
 			return vecNotes.size();
 		}
@@ -483,18 +495,18 @@ namespace synth
 		int nTotalBeats;
 
 	public:
-		vector<channel> vecChannel;
-		vector<note> vecNotes;
-		
+		std::vector<channel> vecChannel;
+		std::vector<note> vecNotes;
+
 
 	private:
-	
+
 	};
-	
+
 }
 
-vector<synth::note> vecNotes;
-mutex muxNotes;
+std::vector<synth::note> vecNotes;
+std::mutex muxNotes;
 synth::instrument_bell instBell;
 synth::instrument_harmonica instHarm;
 synth::instrument_drumkick instKick;
@@ -516,8 +528,8 @@ void safe_remove(T &v, lambda f)
 // Function used by olcNoiseMaker to generate sound waves
 // Returns amplitude (-1.0 to +1.0) as a function of time
 FTYPE MakeNoise(int nChannel, FTYPE dTime)
-{	
-	unique_lock<mutex> lm(muxNotes);
+{
+	std::unique_lock<std::mutex> lm(muxNotes);
 	FTYPE dMixedOutput = 0.0;
 
 	// Iterate through all active notes, and mix together
@@ -529,7 +541,7 @@ FTYPE MakeNoise(int nChannel, FTYPE dTime)
 		// Get sample for this note by using the correct instrument and envelope
 		if(n.channel != nullptr)
 			dSound = n.channel->sound(dTime, n, bNoteFinished);
-		
+
 		// Mix into output
 		dMixedOutput += dSound;
 
@@ -537,20 +549,20 @@ FTYPE MakeNoise(int nChannel, FTYPE dTime)
 			n.active = false;
 	}
 	// Woah! Modern C++ Overload!!! Remove notes which are now inactive
-	safe_remove<vector<synth::note>>(vecNotes, [](synth::note const& item) { return item.active; });
+	safe_remove<std::vector<synth::note>>(vecNotes, [](synth::note const& item) { return item.active; });
 	return dMixedOutput * 0.2;
 }
 
 int main()
 {
-	
+
 
 	// Shameless self-promotion
-	wcout << "www.OneLoneCoder.com - Synthesizer Part 4" << endl 
-		  << "Multiple FM Oscillators, Sequencing, Polyphony" << endl << endl;
+	std::wcout << "www.OneLoneCoder.com - Synthesizer Part 4\n" <<
+		          "Multiple FM Oscillators, Sequencing, Polyphony\n\n";
 
 	// Get all sound hardware
-	vector<wstring> devices = olcNoiseMaker<short>::Enumerate();
+	std::vector<std::wstring> devices = olcNoiseMaker<short>::Enumerate();
 
 	// Create sound machine!!
 	olcNoiseMaker<short> sound(devices[0], 44100, 1, 8, 256);
@@ -563,16 +575,16 @@ int main()
 	HANDLE hConsole = CreateConsoleScreenBuffer(GENERIC_READ | GENERIC_WRITE, 0, NULL, CONSOLE_TEXTMODE_BUFFER, NULL);
 	SetConsoleActiveScreenBuffer(hConsole);
 	DWORD dwBytesWritten = 0;
-	
+
 	// Lambda function to draw into the character array conveniently
-	auto draw = [&screen](int x, int y, wstring s) 
+	auto draw = [&screen](int x, int y, std::wstring s)
 	{
 		for (size_t i = 0; i < s.size(); i++)
 			screen[y * 80 + x + i] = s[i];
 	};
 
-	auto clock_old_time = chrono::high_resolution_clock::now();
-	auto clock_real_time = chrono::high_resolution_clock::now();
+	auto clock_old_time = std::chrono::high_resolution_clock::now();
+	auto clock_real_time = std::chrono::high_resolution_clock::now();
 	double dElapsedTime = 0.0;
 	double dWallTime = 0.0;
 
@@ -591,10 +603,10 @@ int main()
 		// --- SOUND STUFF ---
 
 		// Update Timings =======================================================================================
-		clock_real_time = chrono::high_resolution_clock::now();
+		clock_real_time = std::chrono::high_resolution_clock::now();
 		auto time_last_loop = clock_real_time - clock_old_time;
 		clock_old_time = clock_real_time;
-		dElapsedTime = chrono::duration<FTYPE>(time_last_loop).count();
+		dElapsedTime = std::chrono::duration<FTYPE>(time_last_loop).count();
 		dWallTime += dElapsedTime;
 		FTYPE dTimeNow = sound.GetTime();
 
@@ -612,7 +624,7 @@ int main()
 		for (int k = 0; k < 16; k++)
 		{
 			short nKeyState = GetAsyncKeyState((unsigned char)("ZSXCFVGBNJMK\xbcL\xbe\xbf"[k]));
-				
+
 			// Check if note already exists in currently playing notes
 			muxNotes.lock();
 			auto noteFound = find_if(vecNotes.begin(), vecNotes.end(), [&k](synth::note const& item) { return item.id == k+64 && item.channel == &instHarm; });
@@ -652,7 +664,7 @@ int main()
 						noteFound->off = dTimeNow;
 				}
 			}
-			muxNotes.unlock();		
+			muxNotes.unlock();
 		}
 
 		// --- VISUAL STUFF ---
@@ -690,7 +702,9 @@ int main()
 		draw(2, 13, L"|_____|_____|_____|_____|_____|_____|_____|_____|_____|_____|");
 
 		// Draw Stats
-		wstring stats =  L"Notes: " + to_wstring(vecNotes.size()) + L" Wall Time: " + to_wstring(dWallTime) + L" CPU Time: " + to_wstring(dTimeNow) + L" Latency: " + to_wstring(dWallTime - dTimeNow) ;
+		std::wstring stats =  L"Notes: " + std::to_wstring(vecNotes.size()) + L" Wall Time: " + std::to_wstring(dWallTime)
+		    + L" CPU Time: " + std::to_wstring(dTimeNow) + L" Latency: " + std::to_wstring(dWallTime - dTimeNow) ;
+
 		draw(2, 15, stats);
 
 		// Update Display
