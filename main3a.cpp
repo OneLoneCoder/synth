@@ -7,7 +7,7 @@ License
 Copyright (C) 2018  Javidx9
 This program comes with ABSOLUTELY NO WARRANTY.
 This is free software, and you are welcome to redistribute it
-under certain conditions; See license for details. 
+under certain conditions; See license for details.
 Original works located at:
 https://www.github.com/onelonecoder
 https://www.onelonecoder.com
@@ -18,10 +18,10 @@ https://github.com/OneLoneCoder/videos/blob/master/LICENSE
 
 From Javidx9 :)
 ~~~~~~~~~~~~~~~
-Hello! Ultimately I don't care what you use this for. It's intended to be 
-educational, and perhaps to the oddly minded - a little bit of fun. 
-Please hack this, change it and use it in any way you see fit. You acknowledge 
-that I am not responsible for anything bad that happens as a result of 
+Hello! Ultimately I don't care what you use this for. It's intended to be
+educational, and perhaps to the oddly minded - a little bit of fun.
+Please hack this, change it and use it in any way you see fit. You acknowledge
+that I am not responsible for anything bad that happens as a result of
 your actions. However this code is protected by GNU GPLv3, see the license in the
 github repo. This means you must attribute me if you use it. You can view this
 license here: https://github.com/OneLoneCoder/videos/blob/master/LICENSE
@@ -41,16 +41,31 @@ This adds polyphony, frequency modulation and instruments.
 See Video: https://youtu.be/kDuvruJTjOs
 
 
-main2.cpp 
-This version expands on oscillators to include other waveforms 
+main2.cpp
+This version expands on oscillators to include other waveforms
 and introduces envelopes
 See Video: https://youtu.be/OSCzKOqtgcA
 
-main1.cpp 
-This is the first version of the software. It presents a simple 
+main1.cpp
+This is the first version of the software. It presents a simple
 keyboard and a sine wave oscillator.
 See video: https://youtu.be/tgamhuQnOkM
 
+
+	UPDATED by IndustriousNomad - 13/1/2020 :
+         FIX   - using atomic for "double dFrequencyOutput = 0.0;" is not needed
+                 GCC wouldn't compile with it in this manner anyhow. Visual Studio
+                 should have caught this, but didn't. :/
+	 RESET - Previously, "using namespace std;" was used. But when using
+	             GCC it caused some conflict naming errors. So std:: was manually
+                 added where it needs to be.
+         RESET - To future proof this, the endl functions were replaced with \n.
+                 Reasoning behind this is for speed and less code.
+
+         FIX   - Commented out the Chronos functions since it was unused for now.
+
+         SIDE NOTE FOR CODEBLOCKS USERS -- Make sure you add UNICODE in the DEFINES.
+         I just add #define UNICODE to the olcNoiseMaker.h header.
 */
 
 
@@ -58,10 +73,10 @@ See video: https://youtu.be/tgamhuQnOkM
 #include <list>
 #include <iostream>
 #include <algorithm>
-using namespace std;
+
 
 #define FTYPE double
-#include "olcNoiseMaker.h"
+#include "olcNoiseMaker_VIDEO_PARTS_3_4.h"   // You might need to rename this - IndustriousNomad
 
 
 namespace synth
@@ -150,7 +165,7 @@ namespace synth
 		{
 		case SCALE_DEFAULT: default:
 			return 256 * pow(1.0594630943592952645618252949463, nNoteID);
-		}		
+		}
 	}
 
 
@@ -315,11 +330,11 @@ namespace synth
 		}
 
 	};
-	
+
 }
 
-vector<synth::note> vecNotes;
-mutex muxNotes;
+std::vector<synth::note> vecNotes;
+std::mutex muxNotes;
 synth::instrument_bell instBell;
 synth::instrument_harmonica instHarm;
 
@@ -340,8 +355,8 @@ void safe_remove(T &v, lambda f)
 // Function used by olcNoiseMaker to generate sound waves
 // Returns amplitude (-1.0 to +1.0) as a function of time
 FTYPE MakeNoise(int nChannel, FTYPE dTime)
-{	
-	unique_lock<mutex> lm(muxNotes);
+{
+	std::unique_lock<std::mutex> lm(muxNotes);
 	FTYPE dMixedOutput = 0.0;
 
 	for (auto &n : vecNotes)
@@ -359,7 +374,7 @@ FTYPE MakeNoise(int nChannel, FTYPE dTime)
 	}
 
 	// Woah! Modern C++ Overload!!!
-	safe_remove<vector<synth::note>>(vecNotes, [](synth::note const& item) { return item.active; });
+	safe_remove<std::vector<synth::note>>(vecNotes, [](synth::note const& item) { return item.active; });
 
 
 	return dMixedOutput * 0.2;
@@ -368,23 +383,23 @@ FTYPE MakeNoise(int nChannel, FTYPE dTime)
 int main()
 {
 	// Shameless self-promotion
-	wcout << "www.OneLoneCoder.com - Synthesizer Part 3" << endl << "Multiple Oscillators with Polyphony" << endl << endl;
+	std::wcout << "www.OneLoneCoder.com - Synthesizer Part 3\nMultiple Oscillators with Polyphony\n\n";
 
 	// Get all sound hardware
-	vector<wstring> devices = olcNoiseMaker<short>::Enumerate();
+	std::vector<std::wstring> devices = olcNoiseMaker<short>::Enumerate();
 
 	// Display findings
-	for (auto d : devices) wcout << "Found Output Device: " << d << endl;
-	wcout << "Using Device: " << devices[0] << endl;
+	for (auto d : devices) std::wcout << "Found Output Device: " << d << "\n";
+	std::wcout << "Using Device: " << devices[0] << "\n";
 
 	// Display a keyboard
-	wcout << endl <<
-		"|   |   |   |   |   | |   |   |   |   | |   | |   |   |   |" << endl <<
-		"|   | S |   |   | F | | G |   |   | J | | K | | L |   |   |" << endl <<
-		"|   |___|   |   |___| |___|   |   |___| |___| |___|   |   |__" << endl <<
-		"|     |     |     |     |     |     |     |     |     |     |" << endl <<
-		"|  Z  |  X  |  C  |  V  |  B  |  N  |  M  |  ,  |  .  |  /  |" << endl <<
-		"|_____|_____|_____|_____|_____|_____|_____|_____|_____|_____|" << endl << endl;
+	std::wcout << "\n" <<
+		"|   |   |   |   |   | |   |   |   |   | |   | |   |   |   |\n" <<
+		"|   | S |   |   | F | | G |   |   | J | | K | | L |   |   |\n" <<
+		"|   |___|   |   |___| |___|   |   |___| |___| |___|   |   |__\n" <<
+		"|     |     |     |     |     |     |     |     |     |     |\n" <<
+		"|  Z  |  X  |  C  |  V  |  B  |  N  |  M  |  ,  |  .  |  /  |\n" <<
+		"|_____|_____|_____|_____|_____|_____|_____|_____|_____|_____|\n\n";
 
 
 	// Create sound machine!!
@@ -397,16 +412,16 @@ int main()
 	memset(keyboard, ' ', 127);
 	keyboard[128] = '\0';
 
-	auto clock_old_time = chrono::high_resolution_clock::now();
-	auto clock_real_time = chrono::high_resolution_clock::now();
-	double dElapsedTime = 0.0;
+//	auto clock_old_time = std::chrono::high_resolution_clock::now();
+//	auto clock_real_time = std::chrono::high_resolution_clock::now();
+//	double dElapsedTime = 0.0;
 
 	while (1)
 	{
 		for (int k = 0; k < 16; k++)
 		{
 			short nKeyState = GetAsyncKeyState((unsigned char)("ZSXCFVGBNJMK\xbcL\xbe\xbf"[k]));
-			
+
 			double dTimeNow = sound.GetTime();
 
 			// Check if note already exists in currently playing notes
@@ -456,9 +471,9 @@ int main()
 					}
 				}
 			}
-			muxNotes.unlock();		
+			muxNotes.unlock();
 		}
-		wcout << "\rNotes: " << vecNotes.size() << "    ";
+		std::wcout << "\rNotes: " << vecNotes.size() << "    ";
 
 		//this_thread::sleep_for(5ms);
 	}
