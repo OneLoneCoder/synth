@@ -1,4 +1,4 @@
-/* 
+/*
 	OneLoneCoder.com - Simple Audio Noisy Thing
 	"Allows you to simply listen to that waveform!" - @Javidx9
 
@@ -7,7 +7,7 @@
 	Copyright (C) 2018  Javidx9
 	This program comes with ABSOLUTELY NO WARRANTY.
 	This is free software, and you are welcome to redistribute it
-	under certain conditions; See license for details. 
+	under certain conditions; See license for details.
 	Original works located at:
 	https://www.github.com/onelonecoder
 	https://www.onelonecoder.com
@@ -18,10 +18,10 @@
 
 	From Javidx9 :)
 	~~~~~~~~~~~~~~~
-	Hello! Ultimately I don't care what you use this for. It's intended to be 
-	educational, and perhaps to the oddly minded - a little bit of fun. 
-	Please hack this, change it and use it in any way you see fit. You acknowledge 
-	that I am not responsible for anything bad that happens as a result of 
+	Hello! Ultimately I don't care what you use this for. It's intended to be
+	educational, and perhaps to the oddly minded - a little bit of fun.
+	Please hack this, change it and use it in any way you see fit. You acknowledge
+	that I am not responsible for anything bad that happens as a result of
 	your actions. However this code is protected by GNU GPLv3, see the license in the
 	github repo. This means you must attribute me if you use it. You can view this
 	license here: https://github.com/OneLoneCoder/videos/blob/master/LICENSE
@@ -48,12 +48,22 @@
 
 	This will improve as it grows!
 
+        1.1 - 13/1/2020
+	UPDATED by IndustriousNomad :
+	     FIX   - Corrected the DWORD TYPE Pointers errors in the waveOutProcWrap function.
+	     ADDED - #include <algorithm> for the FIND function to work in GCC.
+	     ADDED - Pragma lib Detection ( Codeblocks doesn't use this ).
+	     RESET - Previously, "using namespace std;" was used. But when using
+	             GCC it caused some conflict naming errors with other libraries.
+		     So std:: was manually added where it needs to be.
+             FIX   - Commented out the "nPreviousSample" Variable since it wasn't being used.
 */
-
 
 #pragma once
 
+#ifdef _MSC_VER
 #pragma comment(lib, "winmm.lib")
+#endif
 
 #include <iostream>
 #include <cmath>
@@ -63,7 +73,7 @@
 #include <thread>
 #include <atomic>
 #include <condition_variable>
-using namespace std;
+#include <algorithm>
 
 #include <Windows.h>
 
@@ -73,7 +83,7 @@ template<class T>
 class olcNoiseMaker
 {
 public:
-	olcNoiseMaker(wstring sOutputDevice, unsigned int nSampleRate = 44100, unsigned int nChannels = 1, unsigned int nBlocks = 8, unsigned int nBlockSamples = 512)
+	olcNoiseMaker(std::wstring sOutputDevice, unsigned int nSampleRate = 44100, unsigned int nChannels = 1, unsigned int nBlocks = 8, unsigned int nBlockSamples = 512)
 	{
 		Create(sOutputDevice, nSampleRate, nChannels, nBlocks, nBlockSamples);
 	}
@@ -83,7 +93,7 @@ public:
 		Destroy();
 	}
 
-	bool Create(wstring sOutputDevice, unsigned int nSampleRate = 44100, unsigned int nChannels = 1, unsigned int nBlocks = 8, unsigned int nBlockSamples = 512)
+	bool Create(std::wstring sOutputDevice, unsigned int nSampleRate = 44100, unsigned int nChannels = 1, unsigned int nBlocks = 8, unsigned int nBlockSamples = 512)
 	{
 		m_bReady = false;
 		m_nSampleRate = nSampleRate;
@@ -98,7 +108,7 @@ public:
 		m_userFunction = nullptr;
 
 		// Validate device
-		vector<wstring> devices = Enumerate();
+		std::vector<std::wstring> devices = Enumerate();
 		auto d = std::find(devices.begin(), devices.end(), sOutputDevice);
 		if (d != devices.end())
 		{
@@ -138,10 +148,10 @@ public:
 
 		m_bReady = true;
 
-		m_thread = thread(&olcNoiseMaker::MainThread, this);
+		m_thread = std::thread(&olcNoiseMaker::MainThread, this);
 
 		// Start the ball rolling
-		unique_lock<mutex> lm(m_muxBlockNotZero);
+		std::unique_lock<std::mutex> lm(m_muxBlockNotZero);
 		m_cvBlockNotZero.notify_one();
 
 		return true;
@@ -169,13 +179,13 @@ public:
 		return m_dGlobalTime;
 	}
 
-	
+
 
 public:
-	static vector<wstring> Enumerate()
+	static std::vector<std::wstring> Enumerate()
 	{
 		int nDeviceCount = waveOutGetNumDevs();
-		vector<wstring> sDevices;
+		std::vector<std::wstring> sDevices;
 		WAVEOUTCAPS woc;
 		for (int n = 0; n < nDeviceCount; n++)
 			if (waveOutGetDevCaps(n, &woc, sizeof(WAVEOUTCAPS)) == S_OK)
@@ -210,13 +220,13 @@ private:
 	WAVEHDR *m_pWaveHeaders;
 	HWAVEOUT m_hwDevice;
 
-	thread m_thread;
-	atomic<bool> m_bReady;
-	atomic<unsigned int> m_nBlockFree;
-	condition_variable m_cvBlockNotZero;
-	mutex m_muxBlockNotZero;
+	std::thread m_thread;
+	std::atomic<bool> m_bReady;
+	std::atomic<unsigned int> m_nBlockFree;
+	std::condition_variable m_cvBlockNotZero;
+	std::mutex m_muxBlockNotZero;
 
-	atomic<double> m_dGlobalTime;
+	std::atomic<double> m_dGlobalTime;
 
 	// Handler for soundcard request for more data
 	void waveOutProc(HWAVEOUT hWaveOut, UINT uMsg, DWORD dwParam1, DWORD dwParam2)
@@ -224,12 +234,12 @@ private:
 		if (uMsg != WOM_DONE) return;
 
 		m_nBlockFree++;
-		unique_lock<mutex> lm(m_muxBlockNotZero);
+		std::unique_lock<std::mutex> lm(m_muxBlockNotZero);
 		m_cvBlockNotZero.notify_one();
 	}
 
 	// Static wrapper for sound card handler
-	static void CALLBACK waveOutProcWrap(HWAVEOUT hWaveOut, UINT uMsg, DWORD dwInstance, DWORD dwParam1, DWORD dwParam2)
+	static void CALLBACK waveOutProcWrap(HWAVEOUT hWaveOut, UINT uMsg, DWORD_PTR dwInstance, DWORD_PTR dwParam1, DWORD_PTR dwParam2)
 	{
 		((olcNoiseMaker*)dwInstance)->waveOutProc(hWaveOut, uMsg, dwParam1, dwParam2);
 	}
@@ -246,14 +256,14 @@ private:
 		// Goofy hack to get maximum integer for a type at run-time
 		T nMaxSample = (T)pow(2, (sizeof(T) * 8) - 1) - 1;
 		double dMaxSample = (double)nMaxSample;
-		T nPreviousSample = 0;
+//		T nPreviousSample = 0;
 
 		while (m_bReady)
 		{
 			// Wait for block to become available
 			if (m_nBlockFree == 0)
 			{
-				unique_lock<mutex> lm(m_muxBlockNotZero);
+				std::unique_lock<std::mutex> lm(m_muxBlockNotZero);
 				m_cvBlockNotZero.wait(lm);
 			}
 
@@ -266,7 +276,7 @@ private:
 
 			T nNewSample = 0;
 			int nCurrentBlock = m_nBlockCurrent * m_nBlockSamples;
-			
+
 			for (unsigned int n = 0; n < m_nBlockSamples; n++)
 			{
 				// User Process
@@ -276,7 +286,7 @@ private:
 					nNewSample = (T)(clip(m_userFunction(m_dGlobalTime), 1.0) * dMaxSample);
 
 				m_pBlockMemory[nCurrentBlock + n] = nNewSample;
-				nPreviousSample = nNewSample;
+//				nPreviousSample = nNewSample;
 				m_dGlobalTime = m_dGlobalTime + dTimeStep;
 			}
 
