@@ -1,0 +1,7 @@
+# Ignore binary and object files
+bin/
+obj/
+
+# Ignore internal IDE stuff
+*.layout
+*.depend
