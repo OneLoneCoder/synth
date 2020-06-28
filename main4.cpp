@@ -155,7 +155,9 @@ namespace synth
 		switch (nScaleID)
 		{
 		case SCALE_DEFAULT: default:
-			return 8 * pow(1.0594630943592952645618252949463, nNoteID);
+			// n/12th root of 2 * A=440 where n is distance from A4 in semitones
+			// n =  NoteID - 69 as A4 is midi note 69
+			return pow(2.0, 0.0 / nNoteID - 69) * 440.0);
 		}		
 	}
 
